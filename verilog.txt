@@ -1,0 +1,67 @@
+module AES(input [127:0] data_in,
+           input [127:0] key,
+           input enable,
+           output [127:0] data_out);
+ 
+  reg [7:0] Sbox [0:255];
+  reg [127:0] state, round_key [0:10];
+ 
+  // Инициализация S-блока
+  initial begin
+    Sbox[0] = 8'h63; Sbox[1] = 8'h7c; Sbox[2] = 8'h77; Sbox[3] = 8'h7b; ...
+    ...
+    Sbox[253] = 8'hed; Sbox[254] = 8'he2; Sbox[255] = 8'hf9;
+  end
+ 
+  // Расширение ключа
+  always @(*) begin
+    round_key[0] = key;
+    for (i = 1; i < 11; i = i + 1) begin
+      round_key[i] = round_key[i-1] ^ {Sbox[bit_slice(round_key[i-1], 7, 4)], 
+                                         Sbox[bit_slice(round_key[i-1], 3, 0)], 
+                                         round_key[i-1][119:0], 
+                                         round_key[i-1][127:120] ^ round_constant[i]};
+    end
+  end
+ 
+  // Основная операция AES
+  always @(posedge clk) begin
+    if (enable) begin
+      state = data_in;
+      for (i = 0; i < 10; i = i + 1) begin
+        state <= SubBytes(state);
+        state <= ShiftRows(state);
+        state <= MixColumns(state);
+        state <= AddRoundKey(state, round_key[i]);
+      end
+      state <= SubBytes(state);
+      state <= ShiftRows(state);
+      state <= AddRoundKey(state, round_key[10]);
+      data_out <= state;
+    end else begin
+      data_out <= '0;
+    end
+  end
+ 
+  // Дополнительные функции AES
+  function [127:0] SubBytes(input [127:0] data);
+    // Заменяем каждый байт входных данных S-блоком
+    ...
+  end
+ 
+  function [127:0] ShiftRows(input [127:0] data);
+    // Сдвигаем каждую строку входных данных на определенное количество байтов
+    ...
+  end
+ 
+  function [127:0] MixColumns(input [127:0] data);
+    // Матричное умножение для столбцов входных данных
+    ...
+  end
+ 
+  function [127:0] AddRoundKey(input [127:0] data, input [127:0] round_key);
+    // Применяем к каждому байту входных данных ключ раунда
+    ...
+  end
+ 
+end
